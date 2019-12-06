@@ -1,0 +1,6 @@
+auth:
+    server: https://jellyfin.example.com
+    user: username
+    password: supersecretpassword
+    user_id: 94c3e2a3697b459186c0de0ba2af39c1
+
