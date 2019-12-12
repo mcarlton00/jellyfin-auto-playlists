@@ -7,6 +7,7 @@ class Playlists():
     def __init__(self):
         self.data = self.read_file()
         self.login(self.data)
+        self.playlists = self.data.get('playlists')
 
     def login(self, data):
         user_id = self.data.get('server_data').get('user_id')
@@ -91,12 +92,18 @@ class Playlists():
 
     def add_bulk_to_playlist(self, playlist_id, items):
         item_ids = [ item.get('Id') for item in items ]
-        item_ids = ','.join(item_ids)
+        grouped_ids = list(generator.split_list(item_ids, 15))
+        index = 1
+        for group in grouped_ids:
+            item_ids = ','.join(group)
 
-        r = requests.post(f'{self.api_url}/Playlists/{playlist_id}/Items?'
-                            f'Ids={item_ids}&UserId={self.user_id}',
-                            headers=self.headers)
-        r.raise_for_status()
+            print(f'Adding group {index} to playlist')
+            index += 1
+
+            r = requests.post(f'{self.api_url}/Playlists/{playlist_id}/Items?'
+                                f'Ids={item_ids}&UserId={self.user_id}',
+                                headers=self.headers)
+            r.raise_for_status()
 
     def get_playlist_id(self, playlist_name):
         playlists = self.get_all_playlists()
@@ -108,6 +115,7 @@ class Playlists():
     def get_playlist_contents(self, playlist_name):
         playlist_id = self.get_playlist_id(playlist_name)
 
+        print('start')
         r = requests.get(f'{self.api_url}/Playlists/{playlist_id}/Items?'
                          f'UserId={self.user_id}', headers=self.headers)
 
@@ -166,5 +174,29 @@ class Playlists():
 
         return r.json()
 
+    #def process_playlists(self):
+
 if __name__ == '__main__':
     generator = Playlists()
+
+    tracks = generator.get_all_tracks()
+    #contents = generator.get_playlist_contents('auto-rock')
+
+    for playlist, genre in generator.playlists.items():
+        generator.create_playlist(playlist)
+        playlist_id = generator.get_playlist_id(playlist)
+        #print(genres.get('genres'))
+
+        for track in tracks:
+            #print(track.get('Name'))
+            #print(track.get('Genres'))
+            items = [ track for track in tracks if genre in track.get('Genres') ]
+            #any(genre in track.get('Genres') for genre in genres) ]
+
+    #        #item_ids = ','.join(group)
+        if items:
+            generator.add_bulk_to_playlist(playlist_id, items)
+
+    #    #print(item_ids)
+    #    #print(len(item_ids))
+    #    #print(self.playlists)
